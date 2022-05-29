@@ -21,6 +21,9 @@ maximum level of nests are used.
 The messagetype is if the trace should be presented as a SAS Error (E), 
 Warning (W) or Note (N). Note is default.
 
+Specifying print equal to N, the options DEBUG or TRACE must be enabled. 
+If print equal to Y, the options DEBUG and TRACE ignored.
+
 -----------------------------------------------------------------------
 Parameters
 
@@ -29,6 +32,9 @@ level
 
 messagetype
     SAS log message type
+
+print
+    Force printing of trace details
 
 -----------------------------------------------------------------------
 Returns
@@ -39,7 +45,7 @@ License
 GNU Public License v3
 ----------------------------------------------------------------------- */
 
-%macro cxtf_print_trace( level = 0, messagetype = N );
+%macro cxtf_print_trace( level = 0, messagetype = N, print = N );
 
     %* note:  low level macro so not relying on other utility macros to avoid recursive nesting ;
 
@@ -48,13 +54,23 @@ GNU Public License v3
 
     %global CXTF_OPTIONS ;
 
-    %if ( %sysfunc(indexw( %upcase(&CXTF_OPTIONS), DEBUG, %str( ) )) > 0 ) %then %do;
+    %if ( ( %sysfunc(indexw( %upcase(&CXTF_OPTIONS), DEBUG, %str( ) )) > 0 ) or 
+          ( %sysfunc(indexw( %upcase(&CXTF_OPTIONS), TRACE, %str( ) )) > 0 ) or 
+          ( %upcase(&print) = Y ) )
+    %then %do;
         %put %str(NO)TE: Macro cxtf_print_trace ;
         %put %str(NO)TE: Version $version$ ;
     %end;
 
     %* ---  end of debug header  --- ;
  
+
+    %* only print trace of debug, trace or force print is enabled ;
+    %if ( ( %sysfunc(indexw( %upcase(&CXTF_OPTIONS), DEBUG, %str( ) )) = 0 ) and 
+          ( %sysfunc(indexw( %upcase(&CXTF_OPTIONS), TRACE, %str( ) )) = 0 ) and
+          ( %upcase(&print) = N ) )
+    %then %goto macro_exit ;
+
 
     %local tftrace_prefix 
            tftrace_trace tftrace_trace_i tftrace_trace_max
